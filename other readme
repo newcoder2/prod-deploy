@@ -1,0 +1,595 @@
+Enter file contents hereOption Explicit
+Dim PDWflag, FOUND As Boolean
+
+'===================================
+'Release Search
+'===================================
+Private Sub cmbRELEASE_Click()
+On Error GoTo ER:
+Dim Sht As Object
+
+Set Sht = ThisWorkbook.Worksheets
+    
+    CLEARTable True, 8                              'Cleaning dynamic table
+    
+    With Sht(2).Range("A8:p1000").Font        'SETTING SIZE AND STYLE
+        .Color = RGB(0, 5, 153)
+        .Size = 10
+        .Bold = True
+    End With
+    
+    RELEASEsearch cmbRELEASE.Value           'Calling Search Function at Module1
+    
+    Sht(2).Range("M8:M1000").NumberFormat = "$#,##0.0;[Red]$#,##0.0"  'Setting Currency format for PDWare column
+    Sht(2).Range("P8:P1000").NumberFormat = "dd/mm/yy"  'DATE FORMAT FOR MODIFIED FIELD
+    If cmbRELEASE.Value <> "ALL Rel" Then
+        She(2).Range("A8:P1000").Sort Key1:=Range("J8"), order1:=xlAscending 'Sort by Stuatus Column, from A8 to O1000 in Ascending order
+    Else
+        Sht(2).Range("A8:P1000").Sort Key1:=Range("A8"), order1:=xlAscending 'Sort by RELEASE Column, from A8 to O1000 in Ascending order
+        MsgBox "Data has been sorted order by RELEASE", vbInformation, "TRACKING & ENGAGEMENT PROCESS"
+    End If
+
+PDWflag = False                     'SETTING FLAG IN ORDER TO INDICATE PDW LIST BUTTON HAS NOT BEEN USED
+
+Set Sht = Nothing
+
+ER:
+If ERR.Number <> 0 Then
+    MsgBox "cmdRelease buttom :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    Set Sht = Nothing
+    ERR.Clear
+End If
+End Sub
+
+Private Sub cmdCleanName_Click()
+    cmdClearREL_Click
+    txtNAME.Value = ""
+End Sub
+
+Private Sub cmdClearNEXUS_Click()
+    txtNexus.Value = ""
+    CLEARTable False, 0
+    Sheet2.Cells(5, 1).ClearComments
+End Sub
+
+Private Sub cmdfindFile_Click()
+    FINDAFILE
+End Sub
+
+Private Sub cmdDBRefresh_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    cmdDBRefresh.Caption = "Updating..."
+End Sub
+
+Private Sub cmdLARRY_Click()
+On Error GoTo ErrorHandler:
+Dim i, R As Integer: i = 2: R = 8
+Dim Sht As Object
+
+Set Sht = ThisWorkbook.Worksheets
+
+CLEARTable True, 8
+cmbRELEASE.Value = ""
+Do While Sht(3).Cells(i, 27) <> ""       'check if cell has text
+    If Sht(3).Cells(i, 27) = "YES" Then  'check if cell has same value as NX
+        COUNTERS Sheet3.Cells(i, 10)     'Checking for counters
+        PrintREL i, R                               'Print Dynamic table
+        R = R + 1                                   'row print counter
+        i = i + 1                                    'row DB table counter
+        FOUND = False
+    Else
+        i = i + 1                       'rwo DB table counter
+    End If
+Loop
+If R = 8 Then
+    MsgBox "Projects - NOT FOUND", vbCritical, "ENGAGEMENT PROCESS"
+    PrintCounters
+Else
+     Sht(2).Range("A8:O1000").Sort Key1:=Range("A8"), order1:=xlAscending
+End If
+
+PDWflag = True 'SETTING FLAG IN ORDER TO INDICATE PDW LIST BUTTON HAS BEEN USED
+
+Set Sht = Nothing
+
+ErrorHandler:
+If ERR.Number Then
+    MsgBox "cmdLarry buttom :: " & ERR.Number & " - " & ERR.Description, vbExclamation, "Tracking Tool"
+    Set Sht = Nothing
+    ERR.Clear
+End If
+End Sub
+
+Private Sub cmdNameSEARCH_Click()
+On Error GoTo ERROR
+    If txtNAME.Value <> "" Then
+        NAMESearch txtNAME.Value
+    Else
+        MsgBox "Please enter a name", vbExclamation, "ENGAGEMENT PROCESS"
+        txtNAME.Activate
+    End If
+
+PDWflag = False 'SETTING FLAG IN ORDER TO INDICATE PDW LIST BUTTON HAS NOT BEEN USED
+
+ERROR:
+If ERR.Number Then
+    MsgBox "cmdNameSEARCH buttom :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+Private Sub cmdNexusLINK_Click()
+On Error GoTo ERR:
+
+If txtNexus.Value <> "" Then
+    ActiveWorkbook.FollowHyperlink Address:="http://mynexus.bankofamerica.com/Nexus/ProjectSummary.aspx?nid=" & txtNexus.Value
+Else
+    MsgBox "Enter a Nexus #", vbExclamation, "ENGAGEMENT PROCESS"
+End If
+
+ERR:
+If ERR.Number <> 0 Then
+    MsgBox "cmdNexusLink :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+Private Sub cmdNexusRESOURCES_Click()
+On Error GoTo ERROR
+If txtNexus.Value <> "" Then
+    ActiveWorkbook.FollowHyperlink Address:="http://mynexus.bankofamerica.com/Nexus/Resources.aspx?nid=" & txtNexus.Value
+Else
+    MsgBox ("Enter a Nexus #")
+End If
+
+ERROR:
+If ERR.Number Then
+    MsgBox "cmdNexusRESOURCES :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+
+Private Sub cmdSENDemail_Click()
+On Error GoTo ERROR
+Dim PROJECT, NEXUS, TESTLEAD, TL2, RELEASE, COMMENTS, PSS, HOURS As String: Dim TEMPflag As Integer
+Dim OutApp, OutMail, Sht As Object
+TEMPflag = 0: NEXUS = ""
+Set Sht = ThisWorkbook.Worksheets
+'=====================
+'SEARCH FOR NEXUS
+'=====================
+'Additional comment to add on the email should be included in this inputbox
+COMMENTS = InputBox("Do you want to add any comment to the engagement email?", "ENGAGEMENT PROCESS")
+
+NEXUSSearch txtNexus.Value
+With Sht(2)
+    If .Cells(4, 2).Value = .txtNexus.Value Then
+        If .Cells(4, 2).Value & .Cells(4, 3).Value <> "" Then
+            RELEASE = .Cells(4, 1).Value
+            PROJECT = .Cells(4, 2).Value & "  " & .Cells(4, 3)
+            TESTLEAD = .Cells(4, 9).Value
+            HOURS = .Cells(4, 12).Value
+            Select Case .Cells(4, 9).Value
+                Case "Luis Enriquez"
+                    TL2 = "luis.enriquez@bankofamerica.com"
+                Case "Adrian Casanova"
+                    TL2 = "adrian.casanova_rivera@bankofamerica.com"
+                Case "Diego Montoya"
+                    TL2 = "diego.montoya@bankofamerica.com"
+                Case "Jorge Cavazos"
+                    TL2 = "jorge.cavazos_covarrubias@bankofamerica.com"
+                Case "Aruna Guttula"
+                    TL2 = "aruna.guttula@bankofamerica.com"
+                Case "Yugendher Narayanan"
+                    TL2 = "yugendher.narayanan@bankofamerica.com"
+                Case Else
+                    TL2 = ""
+            End Select
+        PSS = MsgBox("Verify the information: E-amil will be sent for Nexus: " & .txtNexus.Text & vbCrLf & "Test Lead assgined: " & TL2 & vbCrLf & vbCrLf & "PLEASE CONFIRM", vbInformation + vbOKCancel, "Engagement Process")
+        
+        If PSS = 1 Then
+            Set OutApp = CreateObject("Outlook.Application")
+            Set OutMail = OutApp.CreateItem(0) 'OutApp.CreateItemFromTemplate("C:\Data\Confidential\Tracking & Assignments\temporal.oft") ' has lots of html formatting
+            With OutMail
+                .HTMLBody = "<html><head><style>table#t01 {width: 80%; border: 1; font-family: verdana} table#t01 th {background-color: #990000; font-size: 10pt; color: white;} table#t01 td {font-size: 10pt; align: center; color: #0000E6;}</style></head><body><table id=t01><tr><th colspan=2> THIS PROJECT HAS BEEN MOVED TO ENGAGED STATUS </th></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;'> Release </td><td>" & RELEASE & " </td></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;'>Project </td><td>" & PROJECT & "</td></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;' >Test Lead </td><td>" & TESTLEAD & "</td></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;'>Hours in nexus</td>" & _
+                            "<td>" & HOURS & "</td></tr></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;' > Comments </td><td> " & COMMENTS & "</td></tr></table></body></html>"
+                '.Body = "This message is part of the Engagement Process"
+                .Subject = "OOS Engagement: " & PROJECT
+                .To = "lawrence.f.lelakowski@bankofamerica.com"  '"luis.enriquez@bankofamerica.com" '
+                .Cc = "dg.SIS_Testing_Team_Leads@bankofamerica.com;" & TL2  '"luis.enriquez@bankofamerica.com"
+                .Save
+                .Display
+                .Send
+                TEMPflag = 1
+            End With
+            'ActiveWorkbook.FollowHyperlink Address:="C:\Data\Confidential\Tracking & Assignments\temporal.oft"
+            Set OutMail = Nothing
+            Set OutApp = Nothing
+        Else
+            MsgBox "e-mail has not been sent", vbCritical, "ENGAGEMENT PROCESS" '"Enter the correct Password" & vbCrLf & "e-mail has not been sent", vbCritical, "ENGAGEMENT PROCESS"
+        End If
+    Else
+        TEMPflag = 0
+    End If
+End If
+End With
+
+If TEMPflag = 1 Then
+    MsgBox "Email sent Successfuly", vbInformation, "ENGAGEMENT PROCESS"
+End If
+
+Set Sht = Nothing
+
+ERROR: '===================================================
+If ERR.Number Then
+    MsgBox ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    Set Sht = Nothing
+    ERR.Clear
+End If
+End Sub
+
+Public Sub FINDAFILE()
+Dim FS As Object
+Dim i As Integer
+
+Set FS = CreateObject("Windows.Application")
+Set FS = Application.FileSearch
+With FS
+    .LookIn = ThisWorkbook.Path '"C:\Data\Confidential\Tracking & Assignments"
+    .Filename = "temporal.oft"
+    If .Execute > 0 Then
+        MsgBox "There were " & .FoundFiles.Count & _
+        " file(s) found."
+        For i = 1 To .FoundFiles.Count
+            MsgBox .FoundFiles(i)
+        Next i
+    Else
+        MsgBox "There were no files found", vbCritical, "ENGAGEMENT PROCESS"
+    End If
+End With
+
+End Sub
+
+
+Private Sub CommandButton1_Click()
+
+    Dim i As Long
+    Dim ie As Object
+    Dim objElement As Object
+    Dim objCollection As Object
+ 
+    ' Create InternetExplorer Object
+    Set ie = CreateObject("InternetExplorer.Application")
+ 
+    ' You can uncoment Next line To see form results
+    ie.Visible = False
+ 
+    ' Send the form data To URL As POST binary request
+    ie.navigate "http://www.excely.com/"
+ 
+    ' Statusbar
+    Application.StatusBar = "www.excely.com is loading. Please wait..."
+ 
+    ' Wait while IE loading...
+    Do While ie.busy
+        Application.Wait DateAdd("s", 1, Now)
+    Loop
+ 
+    ' Find 2 input tags:
+    '   1. Text field
+    '   <input type="text" class="textfield" name="s" size="24" value="" />
+    '
+    '   2. Button
+    '   <input type="submit" class="button" value="" />
+    
+    Application.StatusBar = "Search form submission. Please wait..."
+ 
+    Set objCollection = ie.document.getElementsByTagName("input")
+ 
+    i = 0
+    While i < objCollection.Length
+        If objCollection(i).Name = "s" Then
+ 
+            ' Set text for search
+            objCollection(i).Value = "excel vba"
+ 
+        Else
+            If objCollection(i).Type = "submit" And _
+               objCollection(i).Name = "" Then
+ 
+                ' "Search" button is found
+                Set objElement = objCollection(i)
+ 
+            End If
+        End If
+        i = i + 1
+    Wend
+   'objElement.Click    ' click button to search
+    
+    ' Wait while IE re-loading...
+    Do While ie.busy
+        Application.Wait DateAdd("s", 1, Now)
+    Loop
+ 
+    ' Show IE
+    ie.Visible = True
+ 
+    ' Clean up
+    Set ie = Nothing
+    Set objElement = Nothing
+    Set objCollection = Nothing
+ 
+    Application.StatusBar = ""
+
+End Sub
+
+Private Sub CommandButton2_Click()
+Dim i As Integer
+Dim ie As Object
+Set ie = CreateObject("internetexplorer.application")
+
+ie.Visible = True
+ie.navigate "****url****"
+
+While ie.busy
+    DoEvents
+Wend
+
+ie.document.getElementById("SSOID").Value = "Z19516732"
+ie.document.getElementById("Advanced").Checked = False
+ie.document.all("Search").Click
+
+'this loop is to slow the macro as the java form is filled from the search
+For i = 1 To 400000000
+    i = i + 1
+Next i
+
+'ie.Object.Activate
+ie.document.getElementById("Advanced").Checked = False
+ie.document.getElementById("SSOID").Focus
+Application.SendKeys "{TAB 6}" ', True
+
+'bring up the control menu/right click
+Application.SendKeys "+{F10}"
+
+'copy shortcut is 8 items down on the list
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+Application.SendKeys "{DOWN}"
+
+'enter was not working so the shortcut for the menu is 't'
+'SendKeys "{ENTER}"
+Application.SendKeys "{t}"
+
+Windows("Book21").Activate
+Range("A1").Select
+ActiveSheet.Paste
+
+End Sub
+
+Private Sub cmdPPRTSearch_Click()
+On Error GoTo ERROR:
+Dim PPRT As String
+Dim TOOLONG As Integer: TOOLONG = 0
+
+PPRT = InputBox("Enter PPRT Number, remember it's only a 6 digit number", "PPRT Search")
+TOOLONG = Int(Log(PPRT) / Log(10)) + 1
+If TOOLONG = 6 Then
+    If CLng(PPRT) <> 0 Then
+        CLEARTable True, 8 'Cleaning dynamic table
+        PPRTSearch CLng(PPRT)             'Calling PPRT Search procedure
+    Else
+        MsgBox "Please introduce a correct PPRT #", vbExclamation, "PPRT Search"
+    End If
+Else
+    MsgBox "Please use 6 digit PPRT #", vbExclamation, "PPRT Search"
+End If
+
+ERROR:     'HANDLING ERROR MESSAGE============================
+If ERR.Number Then
+    MsgBox "cmdPPRTSearch :: " & ERR.Description & "  " & ERR.Number, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+Private Sub cmdTrackingFullList_Click()
+    ActiveWorkbook.FollowHyperlink Address:="http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/Lists/OOS%20Tracking%20%20Assignments/Excel%20View.aspx"
+End Sub
+
+Private Sub cmdTrackingList_Click()
+'OPEN NEW ITEM TO THE LIST
+    ActiveWorkbook.FollowHyperlink Address:="http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/Lists/OOS%20Tracking%20%20Assignments/NewForm.aspx?RootFolder="
+End Sub
+
+Private Sub txtNAME_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+On Error GoTo ERROR
+
+If KeyCode = 13 Then
+    cmdNameSEARCH_Click
+End If
+
+ERROR: 'HANDLING ERROR MESSAGE============================
+If ERR.Number Then
+    MsgBox "txtNAME_KeyUP :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+Private Sub txtNexus_Keyup(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+On Error GoTo ERROR
+    If KeyCode = 13 Then
+       cmdNexus_Click
+    End If
+    
+ERROR: 'HANDLING ERROR MESSAGE=============================
+If ERR.Number Then
+    MsgBox "txtNexus_KeyUp :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+
+Private Sub Worksheet_Activate()
+Dim TT As Double
+Dim FOUND As Integer
+PDWflag = False
+Dim oSht As Object
+
+Set oSht = ThisWorkbook.Worksheets
+
+'========================
+'Checking Time
+'========================
+
+TT = DateDiff("n", oSht(2).Cells(1, 16).Value, Time)
+If TT > 30 Then
+    oSht(2).cmdDBRefresh.Caption = "UPDATING..."
+    ThisWorkbook.RefreshAll
+    oSht(2).Cells(1, 15) = "Last update: " 'Assigning last timestamp of DB update connection
+    oSht(2).Cells(1, 16) = Time
+    With oSht(2).Range("a15:a16").Font
+        .Color = RGB(0, 5, 153)
+        .Bold = True
+        .Size = 10
+    End With
+    cmdDBRefresh.Caption = "DB Refresh"
+End If
+
+If FindSheet("DB") Then 'Checking if DB sheet exists
+    'Cells(1, 11).Value = "Data Base Sheet:" & Sheet3.Name 'Assgning Name of DB sheet
+    'Cells(1, 11).Font.Color = RGB(0, 0, 0): Cells(1, 11).Font.Bold = True: Cells(1, 11).Font.Size = 7
+Else
+    MsgBox "DB Sheet NOT FOUND, please check if DB Sheet exists"
+    oSht(2).Cells(2, 2) = " Not found - " & oshte(3).Name
+End If
+
+Set oSht = Nothing
+
+End Sub
+
+'===========================
+'CLEAR Button
+'===========================
+Private Sub cmdClearREL_Click()
+    CLEARTable True, 8
+    cmbRELEASE.Value = ""
+End Sub
+
+'===========================
+'CREATE New Sheet
+'===========================
+Private Sub cmdCreateSheet_Click()
+On Error GoTo ERROR
+Dim sName As String
+
+sName = InputBox("Enter Sheet Name: ", "Sheet Name")
+If sName <> "" Then
+    CreateSheet "New " & sName
+Else
+    MsgBox "Please enter a Name for new Sheet", vbOKOnly, "Error Message"
+End If
+
+ERROR: 'HANDLING ERROR MESSAGE========================
+If ERR.Number Then
+    MsgBox "cmdCreateSheet :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+'===========================
+'REFRESH DB SHEET CONNECTION
+'===========================
+Private Sub cmdDBRefresh_Click()
+On Error GoTo ERROR
+Dim TT As Double
+Dim oSht As Object
+
+Set oSht = ThisWorkbook.Worksheets
+
+    cmdDBRefresh.Caption = "Updating..."
+    ThisWorkbook.RefreshAll
+    oSht(2).Cells(1, 16).Value = "Last Update:"
+        With oSht(2).Cells(1, 16)
+            .Value = Time
+            .Font.Color = RGB(255, 0, 0)
+            .Font.Bold = True
+            .Font.Size = 7
+        End With
+        'Cells(1, 14).Font.Color = RGB(255, 0, 0): Cells(1, 14).Font.Bold = True: Cells(1, 14).Font.Size = 7
+    cmdDBRefresh.Caption = "DB Refresh"
+
+'VALIDATE RE-SEARCH once DB has been refreshed ===========================
+If PDWflag Then
+    cmdLARRY_Click
+ElseIf txtNAME.Text <> "" Then
+    cmdNameSEARCH_Click
+    ElseIf cmbRELEASE <> "Select Rel" And cmbRELEASE <> "" Then
+        cmbRELEASE_Click
+End If
+If txtNexus.Text <> "" Then
+    cmdNexus_Click
+End If
+
+'Sheet2.Application.OnTime
+Set oSht = Nothing
+
+ERROR: 'HANDLING ERROR MESSAGE =========================
+If ERR.Number Then
+    MsgBox "cmdDBRefresh buttom :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    Set oSht = Nothing
+    ERR.Clear
+End If
+End Sub
+
+'=============================
+'Nexus SEARCH
+'=============================
+Private Sub cmdNexus_Click()
+On Error GoTo ERROR
+
+If txtNexus.Value <> "" Then
+    CLEARTable False, 0 'Cleaning dynamic table
+    NEXUSSearch txtNexus.Value 'Calling Search Function at Module1
+    'txtNexus.Activate
+Else
+    MsgBox "Enter a Nexus number", vbExclamation, "ENGAGEMENT PROCESS"
+    'txtNexus.Activate
+End If
+
+ERROR: 'HANDLING ERROR MESSAGE ========================
+If ERR.Number Then
+    MsgBox "cmdNexus buttom :: " & ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+On Error GoTo ERR
+Dim NEXUS As Integer
+Dim oSht As Object
+
+Set oSht = ThisWorkbook.Worksheets
+
+With oSht(2)
+    If Target.Column = 2 Then
+        If IsNumeric(Target.Value) And Target.Value <> vbNullString Then
+            .txtNexus.Value = Target.Value
+            cmdNexus_Click
+        End If
+    End If
+End With
+
+Set oSht = Nothing
+
+ERR:
+If ERR.Number = 13 Then
+    MsgBox "Worksheet SelectionChange process ::: " & ERR.Description, vbExclamation, "Tracking Tool"
+    Set oSht = Nothing
+    ERR.Clear
+End If
+End Sub
