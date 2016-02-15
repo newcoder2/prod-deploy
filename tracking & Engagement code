@@ -121,7 +121,7 @@ Private Sub cmdNexusLINK_Click()
 On Error GoTo ERR:
 
 If txtNexus.Value <> "" Then
-    ActiveWorkbook.FollowHyperlink Address:="http://mynexus.bankofamerica.com/Nexus/ProjectSummary.aspx?nid=" & txtNexus.Value
+    ActiveWorkbook.FollowHyperlink Address:="URL" & txtNexus.Value
 Else
     MsgBox "Enter a Nexus #", vbExclamation, "ENGAGEMENT PROCESS"
 End If
@@ -136,7 +136,7 @@ End Sub
 Private Sub cmdNexusRESOURCES_Click()
 On Error GoTo ERROR
 If txtNexus.Value <> "" Then
-    ActiveWorkbook.FollowHyperlink Address:="http://mynexus.bankofamerica.com/Nexus/Resources.aspx?nid=" & txtNexus.Value
+    ActiveWorkbook.FollowHyperlink Address:="URL" & txtNexus.Value
 Else
     MsgBox ("Enter a Nexus #")
 End If
@@ -171,19 +171,19 @@ With Sht(2)
             HOURS = .Cells(4, 12).Value
             Select Case .Cells(4, 9).Value
                 Case "Luis Enriquez"
-                    TL2 = "luis.enriquez@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case "Adrian Casanova"
-                    TL2 = "adrian.casanova_rivera@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case "Diego Montoya"
-                    TL2 = "diego.montoya@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case "Jorge Cavazos"
-                    TL2 = "jorge.cavazos_covarrubias@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case "Aruna Guttula"
-                    TL2 = "aruna.guttula@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case "Yugendher Narayanan"
-                    TL2 = "yugendher.narayanan@bankofamerica.com"
+                    TL2 = "EMAIL"
                 Case Else
-                    TL2 = ""
+                    TL2 = "EMAIL"
             End Select
         PSS = MsgBox("Verify the information: E-amil will be sent for Nexus: " & .txtNexus.Text & vbCrLf & "Test Lead assgined: " & TL2 & vbCrLf & vbCrLf & "PLEASE CONFIRM", vbInformation + vbOKCancel, "Engagement Process")
         
@@ -195,8 +195,8 @@ With Sht(2)
                             "<td>" & HOURS & "</td></tr></tr><tr><td style='color: black; background-color:#CCCCCC; width: 20%; font-size:10pt; font-weight: bolder;' > Comments </td><td> " & COMMENTS & "</td></tr></table></body></html>"
                 '.Body = "This message is part of the Engagement Process"
                 .Subject = "OOS Engagement: " & PROJECT
-                .To = "lawrence.f.lelakowski@bankofamerica.com"  '"luis.enriquez@bankofamerica.com" '
-                .Cc = "dg.SIS_Testing_Team_Leads@bankofamerica.com;" & TL2  '"luis.enriquez@bankofamerica.com"
+                .To = "EMAIL OR DG"
+                .Cc = "EMAIL OR DG"
                 .Save
                 .Display
                 .Send
@@ -398,12 +398,12 @@ End If
 End Sub
 
 Private Sub cmdTrackingFullList_Click()
-    ActiveWorkbook.FollowHyperlink Address:="http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/Lists/OOS%20Tracking%20%20Assignments/Excel%20View.aspx"
+    ActiveWorkbook.FollowHyperlink Address:="URL"
 End Sub
 
 Private Sub cmdTrackingList_Click()
 'OPEN NEW ITEM TO THE LIST
-    ActiveWorkbook.FollowHyperlink Address:="http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/Lists/OOS%20Tracking%20%20Assignments/NewForm.aspx?RootFolder="
+    ActiveWorkbook.FollowHyperlink Address:="URL"
 End Sub
 
 Private Sub txtNAME_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
