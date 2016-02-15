@@ -9,7 +9,7 @@ End Sub
 
 
 Private Sub cmdTrackingList_Click()
-    ActiveWorkbook.FollowHyperlink Address:="http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/Lists/OOS%20Tracking%20%20Assignments/Excel%20View.aspx"
+    ActiveWorkbook.FollowHyperlink Address:="URL"
 End Sub
 
 
