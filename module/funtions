@@ -1,0 +1,670 @@
+Dim AN, EN, AW, REST, NI As Integer     'Dlecaring General Variables
+
+'====================================
+'Search DB Sheet, where all the data is saved and has the connection to SP
+'====================================
+Function FindSheet(SHName As String) As Boolean
+Dim oSht As Object
+
+Set oSht = ThisWorkbook.Worksheets
+
+For i = 1 To oSht.Count           'Count of sheets in workbook
+    If oSht(i).Name = SHName Then 'looking for sheet name
+        FindSheet = True
+        Exit Function
+    End If
+Next
+FindSheet = False
+End Function
+
+
+'====================================
+'Search Sheet DB ALT
+'====================================
+'Function FindSheet_ALT() As Boolean
+'    On Error GoTo error
+'    FindSheet_ALT (Sheet3.Name <> "")
+'If Err.Number Then
+'    MsgBox ("FOUND - " & Err.Number & Err.Description)
+'End If
+'End Function
+
+'====================================
+'Checkup Path
+'====================================
+Function Checkup(SHName As String)
+    Worksheets(SHName).Cells(1, 2) = ThisWorkbook.Path
+End Function
+
+'====================================
+'Creat New Sheet
+'====================================
+Function CreateSheet(SheetName As String) As Boolean
+On Error GoTo ERROR
+    If SheetName <> "" Then
+        Worksheets.Add(After:=Worksheets(Worksheets.Count)).Name = SheetName
+    End If
+CreatSheet = EX
+
+ERROR: 'Error handling
+If ERR.Number Then
+    MsgBox ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+End If
+End Function
+
+'===========================================
+'SEARCH BY Nexus
+'===========================================
+Function NEXUSSearch(NX As String)
+On Error GoTo ERROR
+Dim i As Integer
+Dim TT As Long
+i = 2: TT = CLng(NX)
+'===========================================
+Do While Sheet3.Cells(i, 7) <> ""           'Check while
+    If TT = CLng(Sheet3.Cells(i, 7)) Then   'TT got converted NX value
+        PRINTNexus (i)                      'Print value in static table
+        Exit Do
+    Else
+        i = i + 1
+    End If
+Loop
+If Sheet3.Cells(i, 7) = "" Then
+    MsgBox "Nexus -" & TT & "- NOT FOUND", vbExclamation, "ENGAGEMENT PROCESS"
+End If
+
+'ERROR SECTION ==============================
+ERROR:
+If ERR.Number = 13 Then
+    MsgBox "Please enter only Numbers", vbInformation, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Function
+
+'======================================
+'SEARCH BY PPRT
+'======================================
+Public Sub PPRTSearch(ByVal PPRT As Long)
+On Error GoTo ERROR
+Dim PCounter, R, i As Integer: PCounter = 0: R = 8: i = 2
+Do While Sheet3.Cells(i, 8) <> "" 'Check if there is a Nexus #, this is becuase some times PPRT # is not ready in Nexus Systems
+    If PPRT = Sheet3.Cells(i, 5) Then
+        PCounter = PCounter + 1     'increasing counter
+        PrintREL i, R               'Print the nexus found within the same PPRT #
+        R = R + 1                   'Increasing counter for row to print the next project once found
+        i = i + 1                   'Increasing counter to read DB records
+    Else
+        i = i + 1                   'Increasing counter to read DB records
+    End If
+Loop
+
+If PCounter = 0 Then
+    MsgBox "No projects listed for PPRT: " & PPRT, vbInformation, "PPRT Search Process"
+End If
+
+'ERROR SECTION ==============================
+ERROR:
+If ERR.Number = 13 Then
+    MsgBox "Please enter only Numbers", vbInformation, "ENGAGEMENT PROCESS"
+    ERR.Clear
+End If
+End Sub
+
+'====================================
+'SEARCH BY Release
+'====================================
+Function RELEASEsearch(NX As String)
+Dim i, j, R, HRS, CheckValue As Integer
+Dim FOUND, PDflage As Boolean
+Dim PDW As Currency
+j = 1: i = 2: R = 8: FOUND = True: PDflage = True
+
+Sheet2.Cells(6, 15).Value = CStr(HRS) & " Hrs Forecasted"
+Sheet2.Cells(6, 14).Value = PDW
+'=======================================================================
+If Sheet2.cmbRELEASE.Value <> "ALL Rel" Then                'Checking Queryflag
+    Do While Sheet3.Cells(i, 1) <> ""                                  'check if cell has text (Release)
+        If NX = Sheet3.Cells(i, 1) Then                                 'check if cell has same value as NX, (NX=cmbRelease.value)
+            COUNTERS Sheet3.Cells(i, 10)                              'COUNTERS, sending Eng Status value
+            PrintREL i, R                                                        'Print Dynamic table
+            If Sheet3.Cells(i, 10).Value = "Engaged" And Sheet3.Cells(i, 1) = NX Then
+                PDW = PDW + CCur(Sheet3.Cells(i, 15).Value)     'PDW Sum
+                HRS = HRS + CInt(Sheet3.Cells(i, 14).Value)         'HOURS Sum
+                With Sheet2.Cells(6, 14)                            '===Printing the PDW & HRS Sum
+                    .Value = PDW
+                    .Font.Color = RGB(255, 255, 255)
+                    .Font.Bold = True
+                    .Font.Size = 10
+                End With
+                With Sheet2.Cells(6, 15)
+                    .Value = CStr(HRS) & " Hours"
+                    .Font.Color = RGB(255, 255, 255)
+                    .Font.Bold = True
+                    .Font.Size = 10
+                End With
+                PDflage = False
+            Else
+                If Sheet3.Cells(i, 10).Value = "Analysis" Then
+                    pDate1 = Day(Sheet3.Cells(i, 24).Value) & Month(Sheet3.Cells(i, 24).Value)  'Concatenate day & month for value in DB
+                    pdate2 = Day(Date) & Month(Date)                                            'Concatenate day & month todas' date
+                    CheckValue = DateDiff("d", pDate1, pdate2)
+                    If CheckValue <> 0 Then
+                        With Sheet2.Cells(R, 2)
+                            .Font.Color = RGB(255, 0, 0)
+                        End With
+                    End If
+                End If
+            End If
+            R = R + 1                       'Row print counter
+            i = i + 1                          'Row DB table counter
+            FOUND = False
+        Else
+            i = i + 1                           'Row DB table counter
+        End If
+    Loop
+Else
+    Do While Sheet3.Cells(i, 1) <> ""                   'check if cell has text (Release)
+        COUNTERS Sheet3.Cells(i, 10)                    'COUNTERS, sending Eng Status value
+        PrintREL i, R                                               'Print Dynamic table
+        R = R + 1
+        i = i + 1
+        FOUND = False
+    Loop
+End If
+    PrintCounters
+    PDW = 0: AN = 0: EN = 0: AW = 0: REST = 0: NI = 0: HRS = 0 'Setting counters to 0
+If Sheet2.cmbRELEASE.Value = "Select Rel" Then
+    PrintCounters
+End If
+
+'CHECKING FOR FLAG VALUES ===========================================
+If FOUND Then
+    If Sheet2.cmbRELEASE.Value <> "Select Rel" Then
+        MsgBox "No projects on this Release - " & NX, vbInformation, "ENGAGEMENT PROCESS"
+        PrintCounters
+    End If
+End If
+
+'If PDflage Then
+'    Sheet2.Cells(6, 14).Value = "$----.--"
+'End If
+
+End Function
+
+'==============================
+'COUNTERS
+'==============================
+Public Sub COUNTERS(ByVal ST As String)
+ With Sheet3
+            Select Case ST
+                Case "Analysis"
+                    AN = AN + 1
+                Case "Engaged"
+                    EN = EN + 1
+                Case "Awaiting Engagement"
+                    AW = AW + 1
+                Case "No Impacts"
+                    NI = NI + 1
+                Case Else
+                    REST = REST + 1
+            End Select
+        End With
+End Sub
+'==================================
+'PRINT CHART COUNTERS in Index
+'==================================
+Public Sub PrintChart()
+With Sheet1
+    .Cells(16, 4).Value = EN
+    .Cells(16, 5).Value = AN
+    .Cells(16, 6).Value = AW
+    .Cells(16, 7).Value = NI
+    .Cells(16, 8).Value = REST
+End With
+
+EN = 0: AN = 0: AW = 0: NI = 0: REST = 0
+
+End Sub
+
+
+'=================================
+'PRINT LABELS for Counters results
+'=================================
+Public Sub PrintCounters()
+With Sheet2
+    .labAnalysis.Caption = "Analysis " & AN
+    .labEngaged.Caption = "Engaged " & EN
+    .labAW.Caption = "Aw Eng " & AW
+End With
+End Sub
+
+'====================================
+'PRINT TABLE, static results
+'====================================
+Function PRINTNexus(i As Integer)
+On Error GoTo EX
+Dim R, G, B As Integer: R = 171: G = 21: B = 5
+        With Sheet2
+            .Cells(4, 1) = Sheet3.Cells(i, 1) 'Release
+            .Cells(4, 2) = Sheet3.Cells(i, 7) 'Nexus
+            .Cells(4, 3) = Sheet3.Cells(i, 8)  'Name
+            .Cells(4, 9) = Sheet3.Cells(i, 9) 'Test Lead
+            .Cells(4, 10) = Sheet3.Cells(i, 10) 'Status
+            .Cells(4, 11) = Sheet3.Cells(i, 2) 'Type
+            .Cells(4, 12) = Sheet3.Cells(i, 14) 'Test Est
+            .Cells(4, 13) = CCur(Sheet3.Cells(i, 15)) 'PDware
+            .Cells(4, 14) = Sheet3.Cells(i, 26) 'PDW List flag
+            .Cells(4, 15) = Sheet3.Cells(i, 25) 'BASE
+            With .Range("A4:P4")
+                .Font.Color = RGB(0, 5, 153)
+                .Font.Bold = True
+                .Font.Size = 10
+            End With
+            .Cells(4, 10).Font.Color = RGB(255, 0, 0) 'ENG STATUS
+    '=======================================
+    'Tracking Comments
+    '=======================================
+    'TRACKING COMMENTS CELL
+    .Cells(5, 1) = Sheet3.Cells(i, 11)
+    .Cells(5, 1).Font.Color = RGB(31, 73, 125): Cells(5, 1).Font.Bold = False: Cells(5, 1).Font.Size = 10
+    .Cells(5, 1).ClearComments 'Clear previous comments
+    .Cells(5, 1).AddComment "PCM: " & Sheet3.Cells(i, 4) & " PPRT: " & Sheet3.Cells(i, 5) & vbCrLf & _
+                "TPSM: " & Sheet3.Cells(i, 23) & vbCrLf & _
+                "Dev: " & Sheet3.Cells(i, 17) & vbCrLf & _
+                "TDL: " & Sheet3.Cells(i, 18) & vbCrLf & _
+                "Offshore: " & Sheet3.Cells(i, 19) & vbCrLf & _
+                "Methodology: " & Sheet3.Cells(i, 20)
+    PaintComment .Cells(5, 1).Comment.Text 'CALLING PROCEDURE TO ADD COLOR & BOLD FONT
+End With
+    
+EX:
+If ERR.Number Then
+    MsgBox ERR.Description, vbCritical, "ENGAGEMENT PROCESS"
+End If
+End Function
+
+Public Sub PaintComment(ByVal VARStr As String)
+Dim CMT As Comment
+Dim strFind As String
+
+Set CMT = Sheet2.Cells(5, 1).Comment
+    
+With CMT.Shape.TextFrame
+    strFind = InStr(1, VARStr, "PCM:"): .Characters(1, 5).Font.Bold = True: .Characters(1, 5).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "PPRT:"): .Characters(strFind, 5).Font.Bold = True: .Characters(strFind, 5).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "TPSM:"): .Characters(strFind, 5).Font.Bold = True: .Characters(strFind, 5).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "Dev:"): .Characters(strFind, 4).Font.Bold = True: .Characters(strFind, 4).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "TDL:"): .Characters(strFind, 4).Font.Bold = True: .Characters(strFind, 4).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "Offshore:"): .Characters(strFind, 9).Font.Bold = True: .Characters(strFind, 9).Font.ColorIndex = 5
+    strFind = InStr(1, VARStr, "Methodology:"): .Characters(strFind, 12).Font.Bold = True: .Characters(strFind, 12).Font.ColorIndex = 5
+End With
+    CMT.Shape.Width = 175
+    CMT.Shape.Height = 110
+End Sub
+
+
+'====================================
+'PRINT DYNAMIC TABLE
+'====================================
+Public Sub PrintREL(ByVal i As Integer, ByVal ROW As Integer)
+
+        Cells(ROW, 1) = Sheet3.Cells(i, 1) ' RELEASE
+        Cells(ROW, 2) = Sheet3.Cells(i, 7) 'NEXUS
+        Cells(ROW, 3) = Sheet3.Cells(i, 8) 'NAME
+        Cells(ROW, 9) = Sheet3.Cells(i, 9) 'TEST LEAD
+        Cells(ROW, 11) = Sheet3.Cells(i, 2) 'Type
+        Cells(ROW, 12) = Sheet3.Cells(i, 14) 'Test Est
+        Cells(ROW, 13) = Sheet3.Cells(i, 15) 'Dollars
+        Cells(ROW, 15) = Sheet3.Cells(i, 25) 'BASE
+        Cells(ROW, 14) = Sheet3.Cells(i, 26) 'PDWare List included
+        Cells(ROW, 16) = Sheet3.Cells(i, 24) 'Modified
+        
+'PRINT COLORS based on their Eng Status =================================================
+        Cells(ROW, 10) = Sheet3.Cells(i, 10) 'ENG STATUS
+        With Sheet2
+            Select Case .Cells(ROW, 10).Value
+            Case "Engaged"
+                .Cells(ROW, 10).Font.Color = RGB(0, 153, 0)
+            Case "Analysis"
+                .Cells(ROW, 10).Font.Color = RGB(173, 3, 19)
+            Case "Awaiting Engagement"
+                .Cells(ROW, 10).Font.Color = RGB(255, 102, 0)
+            Case Else
+                .Cells(ROW, 10).Font.Color = RGB(150, 150, 150)
+            End Select
+        End With
+'========================================================================================
+
+End Sub
+'=======================================
+'CLEAR Table
+'=======================================
+Public Sub CLEARTable(Op As Boolean, ByVal R As Integer)
+'Dim a, b As Integer: a = 8
+If Op Then
+        'Cleaning Dynamic table
+    Do While Cells(R, 1) <> "" 'check if there is something in the first cell
+        Cells(R, 1) = "" 'Release
+        Cells(R, 2) = "" 'Type
+        Cells(R, 3) = "" 'Name
+        Cells(R, 9) = "" 'Test Lead
+        Cells(R, 10) = "" 'Status
+        Cells(R, 11) = "" 'Nexus
+        Cells(R, 12) = "" 'Test Est
+        Cells(R, 13) = "" 'PDware
+        Cells(R, 14) = "" 'PDW List
+        Cells(R, 15) = "" 'BASE
+        Cells(R, 16) = "" 'MODIFIED
+        R = R + 1
+    Loop
+Else    'Cleaning Static Table
+    Cells(4, 1) = ""
+    Cells(4, 2) = ""
+    Cells(4, 3) = ""
+    Cells(4, 9) = ""
+    Cells(4, 10) = ""
+    Cells(4, 11) = ""
+    Cells(4, 12) = "" 'Test Est
+    Cells(4, 13) = "" 'PDware
+    Cells(4, 14) = "" 'PDWare List
+    Cells(4, 15) = "" 'BASE
+    Cells(5, 1) = "" 'Tracking Comments
+End If
+End Sub
+
+'================================
+'SEARCH BY NAME
+'================================
+Public Sub NAMESearch(ByVal NM As String)
+Dim i, R, Cc As Integer: i = 2: R = 8: Cc = 0
+Dim flag As Boolean: flag = False
+Dim FOUND As Variant: FOUND = 0
+Dim CAD As String
+
+Do While Sheet3.Cells(i, 8) <> ""   'Check if cells contains text at DB sheet Column 8 (Initiative name)
+    CAD = Sheet3.Cells(i, 8)
+    FOUND = InStr(1, CAD, NM, 1)    'Check if NM is part of the the name of the Initiative
+    If FOUND <> 0 Then
+        PrintREL i, R
+        i = i + 1
+        R = R + 1
+        FOUND = "100"
+        flag = True
+        Cc = Cc + 1
+        EN = 0: AN = 0: AW = 0: NI = 0: REST = 0
+        With Sheet2
+            .labAnalysis.Caption = .labAnalysis.Caption & AN
+            .labEngaged.Caption = .labEngaged.Caption & AN
+            .labAW.Caption = .labAW.Caption & AN
+        End With
+    Else
+        i = i + 1
+    End If
+Loop
+
+If Not flag Then
+    MsgBox "Project " & "''" & Sheet2.txtNAME.Value & "''" & " not found ", vbCritical, "ENGAGEMENT PROCESS"
+Else
+    Cc = Cc + 8                     'Counter to start cleaning the dynamic table
+    CLEARTable True, Cc             'Calling cleaning table process
+End If
+End Sub
+
+
+'======================================
+'LOADING DATA INTO COMBOBOX
+'======================================
+Public Sub LOADComboBox()
+
+' Pending to add a validation process
+' If difference between the last month added in the combobox and the actual month is less than 6
+'   then Add 6 more months
+i = 2
+Sheet2.cmbRELEASE.Clear
+Sheet1.cbxChart.Clear
+With Sheet2.cmbRELEASE
+    Do While Sheet11.Cells(i, 1) <> ""
+        If .ListCount < 1 Then
+            .AddItem "Select Rel"
+            Sheet1.cbxChart.AddItem "Select Rel"
+        End If
+        If .ListCount <> 0 Then
+            .AddItem Sheet11.Cells(i, 1)
+            Sheet1.cbxChart.AddItem Sheet11.Cells(i, 1)
+        End If
+        i = i + 1
+    Loop
+End With
+
+
+
+End Sub
+
+Public Sub sheetSETUP(ByVal FG As Boolean)
+
+If FG Then
+    With Sheet2
+       ' .cmdAgenda.Enabled = False
+        .cmdCreateSheet.Enabled = False
+        .cmdLARRY.Visible = True
+        .cmdLARRY.Enabled = True
+        '.cmdAgenda.Visible = False
+        .cmdSENDemail.Enabled = False
+    End With
+Else
+    With Sheet2
+        '.cmdAgenda.Enabled = True
+        .cmdCreateSheet.Enabled = True
+        .cmdLARRY.Visible = True
+        .cmdLARRY.Enabled = True
+        '.cmdAgenda.Visible = True
+        .cmdSENDemail.Enabled = True
+    End With
+End If
+End Sub
+
+'¨¨¨¨¨¨¨¨¨¨¨PENDING MODIFICATIONS¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+'¨¨¨Filter the value for Offshore field
+'¨¨¨
+'¨¨¨
+'¨¨¨
+'¨¨¨
+'
+
+
+'==========================================
+'UPDATE SHAREPOINT
+'==========================================
+
+'Sub SendToSP(UserName As String, FOLDERPATH As String, CalculatedValue As Long)
+
+'Dim db As DAO.database
+'Dim INSERTStr As String
+
+'open connection to Access db
+'Set db = OpenDatabase(myDatabasePath)
+
+'build insert string
+'insertStr="insert into xlTable (userName,folderPath,calculatedValue,workDate) values (""" & userName & """,""" & folderPath & """," & calculatedValue & ","#" & Now & "#)"
+
+'insert values into xlTable, which adds them to the Sharepoint list
+'db.Execute INSERTStr, dbFailonError
+
+'End Sub
+
+
+
+
+
+'**********************************************************************************************************
+'NOTE: We will need the list GUID to be formatted as “{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}”.
+'If your GUID appears as above with the hyphens and braces “escaped” (i.e. %7B for the braces
+'and %2D for the hyphens) then you will need to replace the escaped characters with the braces
+'and hyphens so when we use this GUID later, it will appear as: {1E76517B-2C36-4473-A420-A737D98589BC}
+'**********************************************************************************************************
+
+
+Public Sub UPDATEList()
+
+Dim objXMLHTTP As Object
+Dim strListNameOrGuid As String
+Dim strBatchXml As String
+Dim strSoapBody As String
+Dim MySiteUrl As String
+
+Set objXMLHTTP = CreateObject("MSXML2.XMLHTTP")
+
+MySiteUrl = "http://sharepoint2.bankofamerica.com/sites/WebservicesTeam/"
+
+strListNameOrGuid = "temporal for tracking" '"{DE2B7AC4-9AB4-41A6-B1E4-B7521A2791F8}"
+
+' Delete item with internal ID of "1"
+'strBatchXml = "<Batch OnError='Continue'><Method ID='1' Cmd='Delete'><Field Name='Nexus'>000000</Field></Method></Batch>"
+
+ strBatchXml = "<Batch OnError='Continue'><Method ID='3' Cmd='New'><Field Name='Release'>2017/00</Field></Method></Batch>"
+'strBatchXml = "<?xml version=""1.0"" encoding=""utf-8""?>" & _
+'"<soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">" & _
+'  "<soap12:Body>" & _
+'    "<UpdateListItems xmlns=""http://schemas.microsoft.com/sharepoint/soap/"">" & _
+'      "<listName>" & strListNameOrGuid & "</listName>" & _
+'      "<updates>" & _
+        "<Batch OnError='continue' ListVersion='1'>" & _
+        "<Method ID='1' Cmd='New'>" & _
+'            "<Field Name='Release'>2015/12</Field>" & _
+'            "<Field Name='Rel Type'>Integrated</Field>" & _
+'            "<Field Name='Prep Phase'>not started</Field>" & _
+'            "<Field Name='PCM #'>p12345</Field>" & _
+'           "</Method>" & _
+'        "</Batch>" & _
+'        "</updates>" & _
+ '   "</UpdateListItems>" & _
+ ' "</soap12:Body>" & _
+'"</soap12:Envelope>"
+
+objXMLHTTP.Open "POST", MySiteUrl & "_vti_bin/Lists.asmx", False
+objXMLHTTP.setRequestHeader "Content-Type", "text/xml; charset=""UTF-8"""
+objXMLHTTP.setRequestHeader "SOAPAction", "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"
+
+strSoapBody = "<soap:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' " _
+  & "xmlns:xsd='http://www.w3.org/2001/XMLSchema' " _
+  & "xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'><soap:Body><UpdateListItems " _
+  & "xmlns='http://schemas.microsoft.com/sharepoint/soap/'><listName>" & strListNameOrGuid _
+  & "</listName><updates>" & strBatchXml & "</updates></UpdateListItems></soap:Body></soap:Envelope>"
+
+'MsgBox strSoapBody
+'objXMLHTTP.Send (strBatchXml)
+objXMLHTTP.Send (strSoapBody)
+'MsgBox objXMLHTTP.Status
+Sheet6.Cells(1, 1).Value = strBatchXml
+Sheet6.Cells(2, 1).Value = objXMLHTTP.responsetext
+Sheet6.Cells(3, 1).Value = objXMLHTTP.statustext
+If objXMLHTTP.Status <> 200 Then
+    MsgBox objXMLHTTP.statustext 'objXMLHTTP.responsetext & " --- " & objXMLHTTP.statustext ' Do something with response
+End If
+
+
+
+Set objXMLHTTP = Nothing
+
+End Sub
+
+
+Sub Add_Item() 'ListName As String, SharepointUrl As String, ValueVar As String, FieldNameVar As String)
+
+Dim objXMLHTTP As Object
+Dim strListNameOrGuid As String
+Dim strBatchXml As String
+Dim strSoapBody As String
+
+Set objXMLHTTP = CreateObject("MSXML2.XMLHTTP")
+
+strListNameOrGuid = ListName
+
+
+'Add New Item'
+strBatchXml = "<Batch OnError='Continue'><Method ID='3' Cmd='New'><Field Name='ID'>New</Field><Field Name=" + FieldNameVar + ">" + ValueVar + "</Field></Method></Batch>"
+
+
+objXMLHTTP.Open "POST", SharepointUrl + "_vti_bin/Lists.asmx", False
+objXMLHTTP.setRequestHeader "Content-Type", "text/xml; charset=""UTF-8"""
+objXMLHTTP.setRequestHeader "SOAPAction", "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"
+
+strSoapBody = "<soap:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' " _
+ & "xmlns:xsd='http://www.w3.org/2001/XMLSchema' " _
+ & "xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'><soap:Body><UpdateListItems " _
+ & "xmlns='http://schemas.microsoft.com/sharepoint/soap/'><listName>" & strListNameOrGuid _
+ & "</listName><updates>" & strBatchXml & "</updates></UpdateListItems></soap:Body></soap:Envelope>"
+
+ objXMLHTTP.Send strSoapBody
+
+If objXMLHTTP.Status = 200 Then
+'   Do something with response
+End If
+
+Set objXMLHTTP = Nothing
+
+End Sub
+
+
+Function updateSharePointList() 'As DOMDocument '(listURL As String, list As String) As DOMDocument
+
+Dim XmlHtp As Object
+Dim XMLDOC As Object 'New DOMDocument
+Dim XmlStr As String
+
+Set XmlHtp = CreateObject("MSXML2.XMLHTTP")
+'Set XMLDOC = CreateObject("DOMDocument")
+
+XmlStr = "<?xml version=""1.0"" encoding=""utf-8""?>" & _
+"<soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">" & _
+  "<soap12:Body>" & _
+    "<UpdateListItems xmlns=""http://schemas.microsoft.com/sharepoint/soap/"">" & _
+      "<listName>" & list & "</listName>" & _
+      "<updates>" & _
+        "<Batch OnError='continue' ListVersion='1'>" & _
+        "<Method ID='1' Cmd='New'>" & _
+            "<Field Name='ID'>New</Field>" & _
+            "<Field Name='Nexus'>000000</Field>" & _
+           "</Method>" & _
+        "</Batch>" & _
+        "</updates>" & _
+    "</UpdateListItems>" & _
+  "</soap12:Body>" & _
+"</soap12:Envelope>"
+
+With XmlHtp
+        .Open "POST", listURL, False
+        .setRequestHeader "Host", "wss"
+        .setRequestHeader "Content-Type", "application/soap+xml; charset=utf-8"
+
+        .Send XmlStr
+
+        XMLDOC.LoadXML .responsetext
+        Set updateSharePointList = XMLDOC
+
+End With
+Sheet6.Cells(1, 1).Value = XmlStr
+Sheet6.Cells(2, 1).Value = XmlHtp.responsetext & " --- " & XmlHtp.statustext
+
+End Function
+
+
+'=======================================================================
+'OPERATIONS WITH TABLES
+'=======================================================================
+
+Private Sub cmdREFRESH_Click()
+With ActiveCell.ListObject
+    .Refresh
+    '.DisplayName
+End With
+'ActiveCell.ListObject.DisplayName '= True
+End Sub
+
+Private Sub cmdShow_Click()
+  With ActiveCell.ListObject
+    labName.Caption = .SharepointUrl
+    labURL.Caption = .Name
+    labRows.Caption = .ListRows.Count
+    End With
+End Sub
