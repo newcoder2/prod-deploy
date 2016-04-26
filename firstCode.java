@@ -14,7 +14,7 @@ public class firstCode {
 		/*
 		 * A constructor can be called and passed with parameters, it's executed once you create a new obj of its class.
 		 */
-		aConstructor myConst=new aConstructor("hola soy Luis");
+		aConstructor myConst=new aConstructor("hi, I'm Neo");
 		
 		/*Person myPerson = new storage.Person();
 		
