@@ -16,13 +16,12 @@ public class firstCode {
 		 */
 		aConstructor myConst=new aConstructor("hi, I'm Neo");
 		
-		/*Person myPerson = new storage.Person();
+		Person myPerson = new storage.Person();
 		
 		myPerson.setName("luis Enriquez");
 		String resource = myPerson.getName();
 		System.out.print(resource + " -> ");	
 		myPerson.Move(210, 500);
-*/
 	}
 
 }
